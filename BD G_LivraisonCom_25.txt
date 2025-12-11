@@ -1,0 +1,62 @@
+
+
+Articles(refart, designation prixA, prixV, codetva, categorie, qtestk);Clients(noclt, nomclt, prenomclt, adrclt, villeclt, code_postal, telclt, adrmail)Commandes(nocde, #noclt,datecde,etatcde) LigCdes(#nocde,#refart,qtecde)LivraisonCom(#nocde,dateliv,#livreur,modepay, etatliv)Personnel (idpers , nompers, prenompers, adrpers, villepers, telpers, d_embauche, Login, motP, #codeposte)Postes(codeposte, libelle, indice)
+
+
+******************************* Articles *******************************
+CREATE TABLE articles(refart CHAR(4) PRIMARY KEY, designation VARCHAR2(30) NOT NULL, prix NUMBER(8,2) NOT NULL, codetva NUMBER(1) NOT NULL, categorie CHAR(10), qtestk NUMBER(5) NOT NULL);
+******************************* Clients *******************************
+CREATE TABLE clients(noclt NUMBER(4) CONSTRAINT clients_pk PRIMARY KEY, nomclt    VARCHAR2(30) NOT NULL, 
+prenomclt VARCHAR2(30) NULL, 
+adrclt VARCHAR2(60) NOT NULL, code_postal NUMBER(5) NOT NULL,villeclt CHAR(30) NOT NULL,
+telclt NUMBER(8) NOT NULL,
+adrmail VARCHAR2(60) NULL, 
+CONSTRAINT clients_code_postal_ck CHECK (code_postal BETWEEN 1000 AND 99999));******************************* Commandes *******************************
+CREATE TABLE commandes(nocde NUMBER(6), noclt   NUMBER(4) NOT NULL, datecde DATE NOT NULL, etatcde CHAR(2) NOT NULL, CONSTRAINT pk_commandes PRIMARY KEY (nocde), CONSTRAINT fk_commandes_clients FOREIGN KEY(noclt) REFERENCES clients(noclt), 
+CONSTRAINT ck_commandes_etat CHECK (etatcde IN ('EC','PR','LI','SO','AN','AL')));--EC:en cours; PR : prête ; LI: Livrée ; SO: soldée, AN: Annulée Avant livraison, AL: Annulée en cours de livraison.   ******************************* LigCom **************************************
+
+CREATE TABLE ligcdes(nocde NUMBER(6),
+refart CHAR(4) NOT NULL, 
+qtecde NUMBER(5) NOT NULL, 
+CONSTRAINT fk_ligcdes_commandes FOREIGN KEY(nocde) REFERENCES commandes(nocde), 
+CONSTRAINT fk_ligcdes_articles FOREIGN KEY(refart) REFERENCES articles(refart), 
+CONSTRAINT pk_ligcdes PRIMARY KEY(nocde,refart)); 
+
+******************************* LivraisonCom **************************************
+
+
+CREATE TABLE LivraisonCom(nocde NUMBER(6) NOT NULL, 
+dateliv DATE NOT NULL,
+livreur  NUMBER(4) NOT NULL, 
+modepay CHAR(10) NOT NULL, 
+
+etatliv CHAR(2) NOT NULL, 
+
+CONSTRAINT fk_Livraison_com FOREIGN KEY (nocde)REFERENCES commandes(nocde),
+CONSTRAINT fk_livraison_pers FOREIGN KEY(livreur) REFERENCES personnel(idpers),
+CONSTRAINT ck_livraison_modep CHECK(modepay IN('avant_livraison' , 'apres_livraison')),
+CONSTRAINT pk_livraison_com PRIMARY KEY(nocde, dateliv), 
+CONSTRAINT ck_livraison_com_etat CHECK (etatliv IN ('EC','LI','AL')));
+
+--EC:en cours; LI: Livrée ; AL: AnnulléeLiv
+
+******************************* Personnel **************************************
+
+CREATE TABLE personnel(idpers NUMBER(4) CONSTRAINT personnel_pk PRIMARY KEY, nompers    VARCHAR(30) NOT NULL, 
+prenompers VARCHAR(30) NOT NULL, 
+adrpers VARCHAR(60) NOT NULL, villepers VARCHAR (30) NOT NULL, 
+telpers NUMBER(8) NOT NULL,
+d_embauche DATE NOT NULL,
+login VARCHAR(30) UNIQUE,
+motP CHAR(8) NULL,        codeposte VARCHAR(10) NOT NULL,
+CONSTRAINT fk_personnel_poste FOREIGN KEY (codeposte) REFERENCES postes (codeposte));
+******************************* Poste **************************************
+
+CREATE TABLE Postes(codeposte VARCHAR(10) CONSTRAINT poste_pk PRIMARY KEY, libelle    VARCHAR2(30) NOT NULL, 
+indice NUMBER(2) NOT NULL);
+
+
+
+
+****************************HCommandesAnnulees*********************************
+HCommandesAnnulees(nocde,numclt, nbrart, montantc, datecde, dateAnnulation, code_postal, AvantLiv)
